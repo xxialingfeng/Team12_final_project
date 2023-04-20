@@ -1,17 +1,32 @@
 package edu.northeastern.group_project_team12;
 
 import android.app.Fragment;
+import android.content.Context;
+import android.content.ContextWrapper;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.media.MediaRecorder;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.os.SystemClock;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Chronometer;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 
 import androidx.core.app.ActivityCompat;
+
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -25,14 +40,16 @@ public class recordFragment extends Fragment {
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
 
+    SharedPreferences globalLoginData;
     private ImageButton deleteButton;
     private ImageButton pauseButton;
     private ImageButton startButton;
     private ImageView recordingImage;
-    private boolean isRecording = false;
-    private MediaRecorder mediaRecorder;
-    private String recordFile;
-
+    private MediaRecorder recorder;
+    private String filename;
+    private SimpleDateFormat formatter;
+    private Date now;
+    private Chronometer timer;
 
     // TODO: Rename and change types of parameters
     private String mParam1;
@@ -65,10 +82,13 @@ public class recordFragment extends Fragment {
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
+
+        globalLoginData = getContext().getSharedPreferences("login", Context.MODE_PRIVATE);
         deleteButton = view.findViewById(R.id.deleteButton);
         pauseButton = view.findViewById(R.id.pauseButton);
         startButton = view.findViewById(R.id.startButton);
         recordingImage = view.findViewById(R.id.recordingImage);
+        timer = view.findViewById(R.id.timer);
 
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -92,64 +112,75 @@ public class recordFragment extends Fragment {
     }
 
     private void stopRecording() {
-        if (isRecording) {
-            isRecording = false;
-            recordingImage.setImageDrawable(getResources().getDrawable(R.drawable.record_inactive));
-            mediaRecorder.stop();
-            mediaRecorder.release();
-            mediaRecorder = null;
-        }
+        deleteRecording();
+        uploadAudio();
     }
 
     private void deleteRecording() {
-        if (isRecording) {
-            isRecording = false;
-            recordingImage.setImageDrawable(getResources().getDrawable(R.drawable.record_inactive));
-            mediaRecorder.stop();
-            mediaRecorder.release();
-            mediaRecorder = null;
-        }
+        timer.stop();
+        timer.setBase(SystemClock.elapsedRealtime());
+        recordingImage.setImageDrawable(getResources().getDrawable(R.drawable.record_inactive));
+        recorder.stop();
+        recorder.reset();
+        recorder.release();
+        recorder = null;
     }
     public void startRecording(View v) {
-        if (!isRecording) {
-            if (checkPermission()) {
-                isRecording = true;
+        if (checkPermission()) {
+            try {
+                timer.start();
                 recordingImage.setImageDrawable(getResources().getDrawable(R.drawable.record_active));
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    mediaRecorder = new MediaRecorder(v.getContext());
+                    recorder = new MediaRecorder(v.getContext());
                 } else {
-                    mediaRecorder = new MediaRecorder();
+                    recorder = new MediaRecorder();
                 }
 
-                mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-                mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-                mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+                recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+                recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+                recorder.setOutputFile(getRecordingFilePath());
+                recorder.prepare();
+                recorder.start();
 
-            // store it in firebase
-            String recordPath = getActivity().getExternalFilesDir("/").getAbsolutePath();
-            recordFile = "filename.3gp";
-
-            mediaRecorder.setOutputFile(recordPath + "/" + recordFile);
-
-            try {
-                mediaRecorder.prepare();
             } catch (Exception e) {
                 e.printStackTrace();
-            }
-
-            mediaRecorder.start();
             }
         }
     }
 
+    // check recorder permission
     private boolean checkPermission() {
         int permission = ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.RECORD_AUDIO);
         if (permission == PackageManager.PERMISSION_GRANTED) {
             return true;
         }
-        // ask permission
         ActivityCompat.requestPermissions(getActivity(), new String[]{android.Manifest.permission.RECORD_AUDIO}, 0);
         return false;
+    }
+
+    // upload audio to firebase
+    private void uploadAudio() {
+        String username = globalLoginData.getString("username", "");
+        if (username.isEmpty()) {
+            return;
+        }
+        DatabaseReference db = FirebaseDatabase.getInstance().getReference("users").child(username);
+        Uri file = Uri.fromFile(new File(filename));
+        db.setValue(file);
+    }
+
+    // get file path to store the recording
+    private String getRecordingFilePath() {
+        formatter = new SimpleDateFormat("MM-dd-yyy HH:mm:ss", Locale.getDefault());
+        now = new Date();
+        //filename = getContext().getExternalFilesDir(null).getAbsolutePath();
+        filename += String.format("New recording_%s.3gp", formatter.format(now));
+
+        ContextWrapper contextWrapper = new ContextWrapper(getContext());
+        File recording = contextWrapper.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+        File file = new File(recording, filename);
+        return file.getPath();
     }
 }
