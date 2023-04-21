@@ -26,6 +26,10 @@
         </activity>
         <activity android:name=".loginActivity"/>
         <activity android:name=".MainPageActivity"/>
+
+        <meta-data
+            android:name="com.google.firebase.database.collection_developer_mode"
+            android:value="true" />
     </application>
 
 </manifest>
