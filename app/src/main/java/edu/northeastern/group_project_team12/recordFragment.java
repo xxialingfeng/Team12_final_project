@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.SystemClock;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,10 +19,16 @@ import android.widget.Chronometer;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -39,7 +46,6 @@ public class recordFragment extends Fragment {
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
-
     SharedPreferences globalLoginData;
     private ImageButton deleteButton;
     private ImageButton pauseButton;
@@ -50,6 +56,9 @@ public class recordFragment extends Fragment {
     private SimpleDateFormat formatter;
     private Date now;
     private Chronometer timer;
+    File file;
+    FirebaseAuth auth = FirebaseAuth.getInstance();
+    FirebaseStorage storage = FirebaseStorage.getInstance();
 
     // TODO: Rename and change types of parameters
     private String mParam1;
@@ -112,7 +121,14 @@ public class recordFragment extends Fragment {
     }
 
     private void stopRecording() {
-        deleteRecording();
+        timer.stop();
+        timer.setBase(SystemClock.elapsedRealtime());
+        recordingImage.setImageDrawable(getResources().getDrawable(R.drawable.record_inactive));
+        recorder.stop();
+        recorder.reset();
+        recorder.release();
+        recorder = null;
+
         uploadAudio();
     }
 
@@ -125,6 +141,7 @@ public class recordFragment extends Fragment {
         recorder.release();
         recorder = null;
     }
+
     public void startRecording(View v) {
         if (checkPermission()) {
             try {
@@ -145,7 +162,7 @@ public class recordFragment extends Fragment {
                 recorder.start();
 
             } catch (Exception e) {
-                e.printStackTrace();
+                Log.e("start recording", e.getMessage());
             }
         }
     }
@@ -162,25 +179,48 @@ public class recordFragment extends Fragment {
 
     // upload audio to firebase
     private void uploadAudio() {
-        String username = globalLoginData.getString("username", "");
-        if (username.isEmpty()) {
-            return;
+        FirebaseUser user = auth.getCurrentUser();
+        if (user != null) {
+            String username = globalLoginData.getString("username", "unknownUser");
+            if (username.isEmpty()) {
+                return;
+            }
+
+            try {
+                Uri audioUri = Uri.fromFile(new File(file.getPath()));
+                StorageReference storageReference = storage.getReference().child("username/" + filename);
+                UploadTask uploadTask = storageReference.putFile(audioUri);
+
+                uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        Log.d("upload audio", "File uploaded successfully" + " " + file.getPath() + filename);
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.e("upload audio", e.getMessage() + " " + file.getPath() + filename);
+                    }
+                });
+            } catch (Exception e) {
+                Log.e("upload audio", e.getMessage() + " " + file.getPath() + filename);
+
+            }
         }
-        DatabaseReference db = FirebaseDatabase.getInstance().getReference("users").child(username);
-        Uri file = Uri.fromFile(new File(filename));
-        db.setValue(file);
     }
 
-    // get file path to store the recording
-    private String getRecordingFilePath() {
-        formatter = new SimpleDateFormat("MM-dd-yyy HH:mm:ss", Locale.getDefault());
-        now = new Date();
-        //filename = getContext().getExternalFilesDir(null).getAbsolutePath();
-        filename += String.format("New recording_%s.3gp", formatter.format(now));
+        // get file path to store the recording
+        private String getRecordingFilePath () {
+            formatter = new SimpleDateFormat("MM_dd_yyyy_HH_mm_ss", Locale.getDefault());
+            now = new Date();
+            filename = String.format("New_Recording_%s.3gp", formatter.format(now));
 
-        ContextWrapper contextWrapper = new ContextWrapper(getContext());
-        File recording = contextWrapper.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
-        File file = new File(recording, filename);
-        return file.getPath();
+            ContextWrapper contextWrapper = new ContextWrapper(getContext());
+            File recording = contextWrapper.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+            file = new File(recording, filename);
+
+            Log.d("recording path", file.getPath());
+
+            return file.getPath();
+        }
     }
-}
