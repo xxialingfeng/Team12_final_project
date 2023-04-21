@@ -60,7 +60,10 @@ public class meFragment extends Fragment {
         // Initialize the ArrayAdapter with a simple layout
         mHistoryRecyclerView = view.findViewById(R.id.history_recycler_view);
         mHistoryRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        //mHistoryArrayAdapter = new ArrayAdapter<>(getContext(), android.R.layout.simple_list_item_1, mHistoryList);
+
+        // Initialize the HistoryAdapter with the mHistoryList
+        mHistoryAdapter = new HistoryAdapter(mHistoryList);
+
         mHistoryRecyclerView.setAdapter(mHistoryAdapter);
 
         // Fetch history records from the cloud and update the ListView
@@ -70,15 +73,6 @@ public class meFragment extends Fragment {
         SwipeToDeleteCallback swipeToDeleteCallback = new SwipeToDeleteCallback(mHistoryAdapter);
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(swipeToDeleteCallback);
         itemTouchHelper.attachToRecyclerView(mHistoryRecyclerView);
-
-//        // Set an OnItemClickListener to handle deletion of records
-//        mHistoryListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//            @Override
-//            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-//                showDeleteRecordDialog(position);
-//            }
-//        });
-
         return view;
     }
 
