@@ -34,7 +34,7 @@
         </activity>
         <activity android:name=".loginActivity"/>
         <activity android:name=".MainPageActivity"/>
-
+        
         <!--for notification-->
         <receiver android:name=".NewSongBroadcastReceiver" />
 
