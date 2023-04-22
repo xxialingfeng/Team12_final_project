@@ -25,8 +25,6 @@ import androidx.core.app.ActivityCompat;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -56,13 +54,11 @@ public class recordFragment extends Fragment {
     private MediaRecorder recorder;
     private MediaPlayer player;
     private String filename;
-
     private SimpleDateFormat formatter;
     private Date now;
     private Chronometer timer;
     File file;
     Boolean isPlay = false;
-    FirebaseAuth auth = FirebaseAuth.getInstance();
     FirebaseStorage storage = FirebaseStorage.getInstance();
 
     // TODO: Rename and change types of parameters
@@ -136,13 +132,14 @@ public class recordFragment extends Fragment {
         });
     }
 
+    // play last saved audio
     private void startPlay() {
         if (!isPlay) {
             isPlay = true;
             timer.start();
             player = new MediaPlayer();
             try {
-                player.setDataSource(getRecordingFilePath());
+                player.setDataSource(file.getPath());
                 player.prepare();
                 player.start();
             } catch (Exception e) {
@@ -199,7 +196,7 @@ public class recordFragment extends Fragment {
                 recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
                 recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
                 recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-                recorder.setOutputFile(getRecordingFilePath());
+                recorder.setOutputFile(create());
                 recorder.prepare();
                 recorder.start();
 
@@ -221,48 +218,49 @@ public class recordFragment extends Fragment {
 
     // upload audio to firebase
     private void uploadAudio() {
-        FirebaseUser user = auth.getCurrentUser();
-        if (user != null) {
-            String username = globalLoginData.getString("username", "unknownUser");
-            if (username.isEmpty()) {
-                return;
-            }
+        Log.d("upload audio", "step1");
+        String username = globalLoginData.getString("username", "unknownUser");
+        if (username.isEmpty()) {
+            return;
+        }
+        Log.d("upload audio", "step2: " + file.getPath());
 
-            try {
-                Uri audioUri = Uri.fromFile(new File(file.getPath()));
-                StorageReference storageReference = storage.getReference().child("username/" + filename);
-                UploadTask uploadTask = storageReference.putFile(audioUri);
+        try {
+            Uri audioUri = Uri.fromFile(new File(file.getPath().substring(1)));
+            Log.d("upload audio", "step3: "+ audioUri);
 
-                uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                    @Override
-                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                        Log.d("upload audio", "File uploaded successfully" + " " + file.getPath() + filename);
-                    }
-                }).addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.e("upload audio", e.getMessage() + " " + file.getPath() + filename);
-                    }
-                });
-            } catch (Exception e) {
-                Log.e("upload audio", e.getMessage() + " " + file.getPath() + filename);
+            StorageReference storageReference = storage.getReference().child("username/" + filename);
+            Log.d("upload audio", "step4: " + storageReference.getPath());
 
-            }
+            UploadTask uploadTask = storageReference.putFile(audioUri);
+            uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                @Override
+                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                    Log.d("upload audio", "File uploaded successfully" + " " + file.getPath());
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    Log.e("upload audio", e.getMessage() + " " + file.getPath());
+                }
+            });
+        } catch (Exception e) {
+            Log.e("upload audio", e.getMessage() + " " + file.getPath());
         }
     }
 
-        // get file path to store the recording
-        private String getRecordingFilePath () {
-            formatter = new SimpleDateFormat("MM_dd_yyyy_HH_mm_ss", Locale.getDefault());
-            now = new Date();
-            filename = String.format("New_Recording_%s.3gp", formatter.format(now));
+    // create file path to store the recording
+    private String create () {
+        formatter = new SimpleDateFormat("MM_dd_yyyy_HH_mm_ss", Locale.getDefault());
+        now = new Date();
+        filename = String.format("New_Recording_%s.3gp", formatter.format(now));
 
-            ContextWrapper contextWrapper = new ContextWrapper(getContext());
-            File recording = contextWrapper.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
-            file = new File(recording, filename);
+        ContextWrapper contextWrapper = new ContextWrapper(getContext());
+        File recording = contextWrapper.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+        file = new File(recording, filename);
 
-            Log.d("recording path", file.getPath());
+        Log.d("recording path", file.getPath());
 
-            return file.getPath();
-        }
+        return file.getPath();
     }
+}

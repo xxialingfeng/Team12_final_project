@@ -15,7 +15,6 @@ import com.google.firebase.database.FirebaseDatabase;
 
 import java.time.Instant;
 import java.util.Map;
-import edu.northeastern.group_project_team12.R;
 
 public class loginActivity extends AppCompatActivity {
     SharedPreferences globalLoginData;
