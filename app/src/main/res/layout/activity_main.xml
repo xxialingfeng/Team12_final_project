@@ -52,4 +52,16 @@
         app:layout_constraintTop_toBottomOf="@+id/welcome"
         app:layout_constraintVertical_bias="0.0" />
 
+    <!--fetch new releases and display a notification-->
+    <Button
+        android:id="@+id/fetch_new_releases_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Fetch New Releases"
+        app:layout_constraintBottom_toTopOf="@+id/copyright"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/button_login" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
