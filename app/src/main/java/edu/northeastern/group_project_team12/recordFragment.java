@@ -1,10 +1,13 @@
 package edu.northeastern.group_project_team12;
 
 import android.app.Fragment;
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.net.Uri;
@@ -17,12 +20,16 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Chronometer;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 
+import com.bullhead.equalizer.EqualizerFragment;
+import com.bullhead.equalizer.Settings;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
@@ -41,7 +48,7 @@ import java.util.Locale;
  * Use the {@link recordFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class recordFragment extends Fragment {
+public class recordFragment extends androidx.fragment.app.Fragment {
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -60,6 +67,10 @@ public class recordFragment extends Fragment {
     private SimpleDateFormat formatter;
     private Date now;
     private Chronometer timer;
+
+    private FrameLayout eqFrame;
+    private int sessionId;
+    private EqualizerFragment equalizerFragment;
     File file;
     Boolean isPlay = false;
     FirebaseAuth auth = FirebaseAuth.getInstance();
@@ -74,10 +85,20 @@ public class recordFragment extends Fragment {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(@Nullable LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.tab03, container, false);
+        View view = inflater.inflate(R.layout.tab03, container, false);
+        return view;
+    }
+
+    public static class Equalizer extends androidx.fragment.app.Fragment {
+        @Override
+        public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                                 Bundle savedInstanceState) {
+            // Define the child fragment layout
+            return inflater.inflate(com.bullhead.equalizer.R.layout.fragment_equalizer, container, false);
+        }
     }
 
     public static recordFragment newInstance(String param1, String param2) {
@@ -104,6 +125,8 @@ public class recordFragment extends Fragment {
         playButton = view.findViewById(R.id.playButton);
         recordingImage = view.findViewById(R.id.recordingImage);
         timer = view.findViewById(R.id.timer);
+        //set equalizer layout
+        eqFrame = view.findViewById(R.id.equalizerContainer);
 
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -130,11 +153,28 @@ public class recordFragment extends Fragment {
                 if (isPlay) {
                     stopPlay();
                 } else {
+                    //equalizer will be visible when users click the play button
+                    if (eqFrame.getVisibility() == View.GONE) {
+                        eqFrame.setVisibility(View.VISIBLE);
+                    }
+                    Settings.isEditing = true;
                     startPlay();
+                    EqualizerFragment equalizerFragment = EqualizerFragment.newBuilder()
+                            .setAudioSessionId(sessionId)
+                            .setAccentColor(Color.parseColor("#1A78F2"))
+                            .build();
+                    getChildFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.equalizerContainer, equalizerFragment)
+                            .addToBackStack(null)
+                            .commit();
                 }
+
             }
         });
     }
+
+
 
     private void startPlay() {
         if (!isPlay) {
@@ -148,6 +188,7 @@ public class recordFragment extends Fragment {
             } catch (Exception e) {
                 Log.e("playing audio record", e.getMessage());
             }
+            sessionId = player.getAudioSessionId();
         }
     }
 

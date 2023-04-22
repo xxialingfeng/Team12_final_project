@@ -11,6 +11,7 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+
 public class MainPageActivity extends AppCompatActivity implements View.OnClickListener {
 
     private LinearLayout mTabMusic;
