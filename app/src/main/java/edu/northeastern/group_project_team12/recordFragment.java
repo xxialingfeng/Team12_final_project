@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Build;
@@ -49,14 +50,18 @@ public class recordFragment extends Fragment {
     SharedPreferences globalLoginData;
     private ImageButton deleteButton;
     private ImageButton pauseButton;
+    private ImageButton playButton;
     private ImageButton startButton;
     private ImageView recordingImage;
     private MediaRecorder recorder;
+    private MediaPlayer player;
     private String filename;
+
     private SimpleDateFormat formatter;
     private Date now;
     private Chronometer timer;
     File file;
+    Boolean isPlay = false;
     FirebaseAuth auth = FirebaseAuth.getInstance();
     FirebaseStorage storage = FirebaseStorage.getInstance();
 
@@ -96,6 +101,7 @@ public class recordFragment extends Fragment {
         deleteButton = view.findViewById(R.id.deleteButton);
         pauseButton = view.findViewById(R.id.pauseButton);
         startButton = view.findViewById(R.id.startButton);
+        playButton = view.findViewById(R.id.playButton);
         recordingImage = view.findViewById(R.id.recordingImage);
         timer = view.findViewById(R.id.timer);
 
@@ -118,6 +124,42 @@ public class recordFragment extends Fragment {
                 deleteRecording();
             }
         });
+        playButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (isPlay) {
+                    stopPlay();
+                } else {
+                    startPlay();
+                }
+            }
+        });
+    }
+
+    private void startPlay() {
+        if (!isPlay) {
+            isPlay = true;
+            timer.start();
+            player = new MediaPlayer();
+            try {
+                player.setDataSource(getRecordingFilePath());
+                player.prepare();
+                player.start();
+            } catch (Exception e) {
+                Log.e("playing audio record", e.getMessage());
+            }
+        }
+    }
+
+    private void stopPlay() {
+        if (isPlay) {
+            isPlay = false;
+            timer.stop();
+            timer.setBase(SystemClock.elapsedRealtime());
+            player.stop();
+            player.release();
+            player = null;
+        }
     }
 
     private void stopRecording() {
