@@ -7,6 +7,8 @@ import android.util.Base64;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.jetbrains.annotations.NotNull;
+
 
 import java.io.IOException;
 
@@ -18,9 +20,9 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-//import com.spotify.sdk.android.authentication.AuthenticationResponse;
-//import com.spotify.sdk.android.authentication.SpotifyAuthentication;
-
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.bumptech.glide.request.transition.Transition;
 
 public class SpotifyApiManager {
 
@@ -79,12 +81,12 @@ public class SpotifyApiManager {
 
         httpClient.newCall(request).enqueue(new Callback() {
             @Override
-            public void onFailure(Call call, IOException e) {
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
                 e.printStackTrace();
             }
 
             @Override
-            public void onResponse(Call call, Response response) throws IOException {
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
                 if (response.isSuccessful()) {
                     try {
                         JSONObject jsonResponse = new JSONObject(response.body().string());
