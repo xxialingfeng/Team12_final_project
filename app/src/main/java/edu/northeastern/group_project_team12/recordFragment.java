@@ -5,6 +5,7 @@ import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.content.Context;
 import android.content.ContextWrapper;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -48,7 +49,7 @@ import java.util.Locale;
  * Use the {@link recordFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class recordFragment extends androidx.fragment.app.Fragment {
+public class recordFragment extends Fragment {
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -92,14 +93,6 @@ public class recordFragment extends androidx.fragment.app.Fragment {
         return view;
     }
 
-    public static class Equalizer extends androidx.fragment.app.Fragment {
-        @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                                 Bundle savedInstanceState) {
-            // Define the child fragment layout
-            return inflater.inflate(com.bullhead.equalizer.R.layout.fragment_equalizer, container, false);
-        }
-    }
 
     public static recordFragment newInstance(String param1, String param2) {
         recordFragment fragment = new recordFragment();
@@ -153,25 +146,18 @@ public class recordFragment extends androidx.fragment.app.Fragment {
                 if (isPlay) {
                     stopPlay();
                 } else {
-                    //equalizer will be visible when users click the play button
-                    if (eqFrame.getVisibility() == View.GONE) {
-                        eqFrame.setVisibility(View.VISIBLE);
-                    }
-                    Settings.isEditing = true;
                     startPlay();
-                    EqualizerFragment equalizerFragment = EqualizerFragment.newBuilder()
-                            .setAudioSessionId(sessionId)
-                            .setAccentColor(Color.parseColor("#1A78F2"))
-                            .build();
-                    getChildFragmentManager()
-                            .beginTransaction()
-                            .replace(R.id.equalizerContainer, equalizerFragment)
-                            .addToBackStack(null)
-                            .commit();
-                }
+                    openEqualizer();
 
+                }
             }
         });
+    }
+
+    public void openEqualizer(){
+        Intent intent = new Intent(getActivity(), Equalizer.class);
+        intent.putExtra("data_key", sessionId);
+        startActivity(intent);
     }
 
 
