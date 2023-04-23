@@ -25,6 +25,8 @@ import androidx.core.app.ActivityCompat;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -60,6 +62,7 @@ public class recordFragment extends Fragment {
     File file;
     Boolean isPlay = false;
     FirebaseStorage storage = FirebaseStorage.getInstance();
+    FirebaseAuth auth = FirebaseAuth.getInstance();
 
     // TODO: Rename and change types of parameters
     private String mParam1;
@@ -218,20 +221,17 @@ public class recordFragment extends Fragment {
 
     // upload audio to firebase
     private void uploadAudio() {
-        Log.d("upload audio", "step1");
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            auth.signInAnonymously();
+        }
         String username = globalLoginData.getString("username", "unknownUser");
         if (username.isEmpty()) {
             return;
         }
-        Log.d("upload audio", "step2: " + file.getPath());
-
         try {
             Uri audioUri = Uri.fromFile(new File(file.getPath().substring(1)));
-            Log.d("upload audio", "step3: "+ audioUri);
-
             StorageReference storageReference = storage.getReference().child("username/" + filename);
-            Log.d("upload audio", "step4: " + storageReference.getPath());
-
             UploadTask uploadTask = storageReference.putFile(audioUri);
             uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                 @Override
