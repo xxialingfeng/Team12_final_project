@@ -124,6 +124,4 @@ public class MainPageActivity extends AppCompatActivity implements View.OnClickL
                 break;
         }
     }
-
-
 }

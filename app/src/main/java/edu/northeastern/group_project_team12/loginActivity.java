@@ -37,7 +37,6 @@ public class loginActivity extends AppCompatActivity {
 
     public void login(View view) {
         String username = ((EditText) findViewById(R.id.username)).getText().toString();
-
         DatabaseReference db = FirebaseDatabase.getInstance().getReference("users");
         db.child(username).get().addOnCompleteListener((t) -> {
             Map<String, Object> userMap = (Map<String, Object>) t.getResult().getValue();
