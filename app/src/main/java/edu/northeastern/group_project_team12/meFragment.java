@@ -1,7 +1,9 @@
 package edu.northeastern.group_project_team12;
 
+import android.annotation.SuppressLint;
 import android.app.Fragment;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +19,12 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.ListResult;
+import com.google.firebase.storage.StorageReference;
+
 import java.util.ArrayList;
 import java.util.List;
 public class meFragment extends Fragment {
@@ -31,6 +39,8 @@ public class meFragment extends Fragment {
     private HistoryAdapter mHistoryAdapter;
     // Add a List to store history records
     private List<String> mHistoryList = new ArrayList<>();
+    FirebaseStorage storage = FirebaseStorage.getInstance();
+
 
     public meFragment() {
     }
@@ -77,12 +87,23 @@ public class meFragment extends Fragment {
     }
 
     // Fetch history records
+    @SuppressLint("NotifyDataSetChanged")
     private void fetchHistoryRecords() {
-        // TODO: Implement the logic to fetch history records from the cloud
-        // For now, adding dummy records to the list
-        mHistoryList.add("Record 1");
-        mHistoryList.add("Record 2");
-        mHistoryList.add("Record 3");
+        StorageReference files = storage.getReference().child("username/");
+        files.listAll().addOnSuccessListener(new OnSuccessListener<ListResult>() {
+            @Override
+            public void onSuccess(ListResult listResult) {
+                for (StorageReference item : listResult.getItems()) {
+                    String filename = String.valueOf(item).split("/")[4];
+                    mHistoryList.add(filename);
+                }
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.e("fetch history record", e.getMessage());
+            }
+        });
         mHistoryAdapter.notifyDataSetChanged();
     }
 }

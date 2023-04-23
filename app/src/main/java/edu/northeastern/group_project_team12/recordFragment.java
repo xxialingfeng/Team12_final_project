@@ -231,7 +231,7 @@ public class recordFragment extends Fragment {
         }
         try {
             Uri audioUri = Uri.fromFile(new File(file.getPath().substring(1)));
-            StorageReference storageReference = storage.getReference().child("username/" + filename);
+            StorageReference storageReference = storage.getReference().child("username/");
             UploadTask uploadTask = storageReference.putFile(audioUri);
             uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                 @Override

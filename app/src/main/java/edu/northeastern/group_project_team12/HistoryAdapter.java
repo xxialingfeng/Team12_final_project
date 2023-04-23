@@ -1,5 +1,6 @@
 package edu.northeastern.group_project_team12;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -7,6 +8,11 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import java.util.List;
 
@@ -17,6 +23,7 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHold
     public HistoryAdapter(List<String> historyList) {
         mHistoryList = historyList;
     }
+    FirebaseStorage storage = FirebaseStorage.getInstance();
 
     @NonNull
     @Override
@@ -39,7 +46,19 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHold
     public void deleteRecord(int position) {
         mHistoryList.remove(position);
         notifyItemRemoved(position);
-        // TODO: Implement the logic to delete the record from the cloud
+
+        StorageReference reference = storage.getReference().child("username/" + mHistoryList.get(position));
+        reference.delete().addOnSuccessListener(new OnSuccessListener<Void>() {
+            @Override
+            public void onSuccess(Void unused) {
+                Log.d("delete file", "delete " + mHistoryList.get(position) + " successfully");
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.e("delete file", e.getMessage());
+            }
+        });
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
