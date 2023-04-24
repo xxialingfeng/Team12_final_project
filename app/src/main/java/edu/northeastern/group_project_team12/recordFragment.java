@@ -61,6 +61,7 @@ public class recordFragment extends Fragment {
     private Chronometer timer;
     File file;
     Boolean isPlay = false;
+    Boolean isRecord = false;
     FirebaseStorage storage = FirebaseStorage.getInstance();
     FirebaseAuth auth = FirebaseAuth.getInstance();
 
@@ -137,7 +138,7 @@ public class recordFragment extends Fragment {
 
     // play last saved audio
     private void startPlay() {
-        if (!isPlay) {
+        if (!isPlay && !isRecord) {
             isPlay = true;
             timer.start();
             player = new MediaPlayer();
@@ -152,7 +153,7 @@ public class recordFragment extends Fragment {
     }
 
     private void stopPlay() {
-        if (isPlay) {
+        if (isPlay && !isRecord) {
             isPlay = false;
             timer.stop();
             timer.setBase(SystemClock.elapsedRealtime());
@@ -163,48 +164,57 @@ public class recordFragment extends Fragment {
     }
 
     private void stopRecording() {
-        timer.stop();
-        timer.setBase(SystemClock.elapsedRealtime());
-        recordingImage.setImageDrawable(getResources().getDrawable(R.drawable.record_inactive));
-        recorder.stop();
-        recorder.reset();
-        recorder.release();
-        recorder = null;
+        if (isRecord && !isPlay) {
+            isRecord = false;
+            timer.stop();
+            timer.setBase(SystemClock.elapsedRealtime());
+            recordingImage.setImageDrawable(getResources().getDrawable(R.drawable.record_inactive));
+            recorder.stop();
+            recorder.reset();
+            recorder.release();
+            recorder = null;
 
-        uploadAudio();
+            uploadAudio();
+        }
     }
 
     private void deleteRecording() {
-        timer.stop();
-        timer.setBase(SystemClock.elapsedRealtime());
-        recordingImage.setImageDrawable(getResources().getDrawable(R.drawable.record_inactive));
-        recorder.stop();
-        recorder.reset();
-        recorder.release();
-        recorder = null;
+        if (isRecord && !isPlay) {
+            isRecord = false;
+            timer.stop();
+            timer.setBase(SystemClock.elapsedRealtime());
+            recordingImage.setImageDrawable(getResources().getDrawable(R.drawable.record_inactive));
+            recorder.stop();
+            recorder.reset();
+            recorder.release();
+            recorder = null;
+        }
     }
 
     public void startRecording(View v) {
-        if (checkPermission()) {
-            try {
-                timer.start();
-                recordingImage.setImageDrawable(getResources().getDrawable(R.drawable.record_active));
+        if (!isRecord && !isPlay) {
+            if (checkPermission()) {
+                try {
+                    isRecord = true;
+                    timer.start();
+                    recordingImage.setImageDrawable(getResources().getDrawable(R.drawable.record_active));
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    recorder = new MediaRecorder(v.getContext());
-                } else {
-                    recorder = new MediaRecorder();
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        recorder = new MediaRecorder(v.getContext());
+                    } else {
+                        recorder = new MediaRecorder();
+                    }
+
+                    recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                    recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+                    recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+                    recorder.setOutputFile(create());
+                    recorder.prepare();
+                    recorder.start();
+
+                } catch (Exception e) {
+                    Log.e("start recording", e.getMessage());
                 }
-
-                recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-                recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-                recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-                recorder.setOutputFile(create());
-                recorder.prepare();
-                recorder.start();
-
-            } catch (Exception e) {
-                Log.e("start recording", e.getMessage());
             }
         }
     }
