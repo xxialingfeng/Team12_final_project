@@ -10,8 +10,6 @@ import android.view.Window;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import androidx.fragment.app.Fragment;
-
 
 public class MainPageActivity extends AppCompatActivity implements View.OnClickListener {
 
