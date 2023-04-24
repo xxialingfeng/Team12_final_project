@@ -1,5 +1,7 @@
 package edu.northeastern.group_project_team12;
 
+import android.app.IntentService;
+import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -52,6 +54,13 @@ public class loginActivity extends AppCompatActivity {
         });
         Intent intent = new Intent(this, MainPageActivity.class);
         startActivity(intent);
+        startSpotifyNotification(username);
+    }
+
+    public void startSpotifyNotification(String username) {
+        Intent intent = new Intent(this, SpotifyNotification.class);
+        intent.putExtra("username", username);
+        startService(intent);
     }
 }
 

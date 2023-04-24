@@ -1,17 +1,22 @@
 package edu.northeastern.group_project_team12;
 
 import android.app.Fragment;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
-public class MusicFragment extends Fragment {
+public class MusicFragment extends Fragment implements OnSongResultListener {
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
+
+    // Add a member variable for the TextView
+    private TextView mSongInfoTextView;
 
     // TODO: Rename and change types of parameters
     private String mParam1;
@@ -44,6 +49,25 @@ public class MusicFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.tab01, container, false);
+        View view = inflater.inflate(R.layout.tab01, container, false);
+
+        // Find the TextView in the layout
+        mSongInfoTextView = view.findViewById(R.id.tv_song_info);
+
+        // Start the SpotifyNotification service
+        Intent intent = new Intent(getActivity(), SpotifyNotification.class);
+        intent.putExtra("username", "your_username_here");
+        getActivity().startService(intent);
+
+        return view;
+    }
+
+    // notification for MusicFragment
+    @Override
+    public void onSongResult(String song) {
+        // Update the TextView with the song information
+        if (mSongInfoTextView != null) {
+            mSongInfoTextView.setText(song);
+        }
     }
 }
